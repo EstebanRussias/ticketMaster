@@ -1,0 +1,31 @@
+<%- include('partials/header') %>
+
+<a href="/">&larr; Retour</a>
+<h1><%= event.artist %></h1>
+<p><%= event.locationName %> - <%= event.locationAdress %></p>
+
+<% if (error) { %>
+    <p class="error"><%= error %></p>
+<% } %>
+
+<h2>Categories</h2>
+<div class="grid">
+    <% categories.forEach(c => { %>
+        <div class="card">
+            <h3><%= c.categoryName %></h3>
+            <p><%= c.price %> EUR</p>
+            <p><%= c.availableCount %> place(s) disponible(s) / <%= c.totalQuantity %></p>
+            <% if (currentUser) { %>
+                <form action="/events/<%= event.id %>/buy" method="post">
+                    <input type="hidden" name="categoryId" value="<%= c.categoryId %>">
+                    <button type="submit" <% if (c.availableCount <= 0) { %>disabled<% } %>>Acheter</button>
+                </form>
+            <% } %>
+        </div>
+    <% }) %>
+</div>
+<% if (!currentUser) { %>
+    <p><a href="/login">Connectez-vous</a> pour acheter un billet.</p>
+<% } %>
+
+<%- include('partials/footer') %>
