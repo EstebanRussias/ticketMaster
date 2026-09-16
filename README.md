@@ -9,7 +9,7 @@ Application de billeterie : front Node.js/Express + base MySQL (requetes complex
 - `db/init/` : scripts SQL executes automatiquement au premier demarrage du conteneur MySQL
   - `01_schema.sql` : tables (`users`, `location`, `event`, `category`, `ticket`)
   - `02_seed.sql` : donnees de demonstration (utilisateur de test : name=`Jean`, password=`password123`)
-  - `03_views.sql` : vues (`v_ticket_details`, `v_category_availability`, `v_event_summary`, `v_event_revenue`)
+  - `03_views.sql` : vues (`v_ticket_details`, `v_category_availability`, `v_event_summary`)
   - `04_functions.sql` : fonctions (`fn_available_seats`, `fn_event_revenue`) et procedure `sp_buy_ticket`
   - `05_triggers.sql` : triggers (controle des places disponibles, suppression logique en cascade)
   - `06_security.sql` : utilisateurs SQL avec droits restreints (`app_user`, `report_user`)
