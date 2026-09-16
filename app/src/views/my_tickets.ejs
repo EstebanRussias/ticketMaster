@@ -1,0 +1,20 @@
+<%- include('partials/header') %>
+
+<h1>Mes billets</h1>
+<table>
+    <thead>
+        <tr><th>Event</th><th>Categorie</th><th>Prix</th><th>Achete le</th></tr>
+    </thead>
+    <tbody>
+        <% tickets.forEach(t => { %>
+            <tr>
+                <td><%= t.eventArtist %> (<%= t.locationName %>)</td>
+                <td><%= t.categoryName %></td>
+                <td><%= t.categoryPrice %> EUR</td>
+                <td><%= new Date(t.ticketCreateAt).toLocaleString('fr-FR') %></td>
+            </tr>
+        <% }) %>
+    </tbody>
+</table>
+
+<%- include('partials/footer') %>

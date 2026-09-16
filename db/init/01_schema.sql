@@ -1,0 +1,61 @@
+CREATE DATABASE IF NOT EXISTS billeterie CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE billeterie;
+
+CREATE TABLE users (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    lastName    VARCHAR(100) NOT NULL,
+    name        VARCHAR(100) NOT NULL,
+    password    VARCHAR(255) NOT NULL,
+    isDeleted   BOOLEAN NOT NULL DEFAULT FALSE,
+    createAt    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updateAt    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE location (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    adress      VARCHAR(255) NOT NULL,
+    name        VARCHAR(150) NOT NULL,
+    nbQuantity  INT NOT NULL DEFAULT 0,
+    isDeleted   BOOLEAN NOT NULL DEFAULT FALSE,
+    createAt    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updateAt    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE event (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    artist      VARCHAR(150) NOT NULL,
+    idLocation  INT NOT NULL,
+    isDeleted   BOOLEAN NOT NULL DEFAULT FALSE,
+    createAt    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updateAt    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_event_location FOREIGN KEY (idLocation) REFERENCES location(id)
+);
+
+CREATE TABLE category (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    price       DECIMAL(10,2) NOT NULL,
+    nbQuantity  INT NOT NULL DEFAULT 0,
+    name        VARCHAR(100) NOT NULL,
+    numPlace    VARCHAR(50),
+    isDeleted   BOOLEAN NOT NULL DEFAULT FALSE,
+    createAt    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updateAt    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE ticket (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    idEvent     INT NOT NULL,
+    idUser      INT NOT NULL,
+    idCategory  INT NOT NULL,
+    isDeleted   BOOLEAN NOT NULL DEFAULT FALSE,
+    createAt    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updateAt    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_ticket_event FOREIGN KEY (idEvent) REFERENCES event(id),
+    CONSTRAINT fk_ticket_user FOREIGN KEY (idUser) REFERENCES users(id),
+    CONSTRAINT fk_ticket_category FOREIGN KEY (idCategory) REFERENCES category(id)
+);
+
+CREATE INDEX idx_event_location ON event(idLocation);
+CREATE INDEX idx_ticket_event ON ticket(idEvent);
+CREATE INDEX idx_ticket_user ON ticket(idUser);
+CREATE INDEX idx_ticket_category ON ticket(idCategory);

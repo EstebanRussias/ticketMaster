@@ -1,0 +1,14 @@
+<%- include('partials/header') %>
+
+<h1>Evenements</h1>
+<div class="grid">
+    <% events.forEach(e => { %>
+        <a class="card" href="/events/<%= e.eventId %>">
+            <h2><%= e.artist %></h2>
+            <p><%= e.locationName %> - <%= e.locationAdress %></p>
+            <p><%= e.ticketsSold %> billet(s) vendu(s)</p>
+        </a>
+    <% }) %>
+</div>
+
+<%- include('partials/footer') %>
