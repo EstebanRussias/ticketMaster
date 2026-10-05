@@ -52,7 +52,7 @@ CREATE TABLE category (
     idEvent     INT NOT NULL,
     name        VARCHAR(100) NOT NULL,
     price       DECIMAL(10,2) NOT NULL,
-    nbQuantity  INT NOT NULL,                          -- stock de places de la categorie
+    nbQuantity  INT NOT NULL,                 
     isDeleted   BOOLEAN NOT NULL DEFAULT FALSE,
     createAt    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updateAt    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

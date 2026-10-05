@@ -124,7 +124,7 @@ Détails dans la section 8 du [document de présentation](docs/presentation.md).
 
 ## Outils d'IA utilisés
 
-Ce projet a été développé avec l'assistance de **Claude Code** (Anthropic) pour le front et la documentation
+Ce projet a été développé avec l'assistance de **Claude Code** (Anthropic) pour le front et la documentation et la generation de fake data.
 
 ## Notes
 

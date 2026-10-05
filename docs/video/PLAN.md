@@ -1,8 +1,5 @@
 # Plan de la vidéo (8 à 12 minutes)
 
-À enregistrer en direct (OBS / Xbox Game Bar), police du terminal ≥ 18 pt, micro audible.
-Déposer le MP4 dans `docs/video/` (ou, si > 100 Mo, héberger la vidéo et mettre le lien dans le README).
-
 | Temps | Séquence | À montrer à l'écran |
 |---|---|---|
 | 0:00 – 0:45 | Présentation | Le projet, le schéma d'architecture (`docs/presentation.md` §2) |
