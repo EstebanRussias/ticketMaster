@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Billeterie</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" href="/">Billeterie</a>
+    <nav>
+        <% if (currentUser) { %>
+            <a href="/mytickets">Mes billets</a>
+            <span class="user">Bonjour <%= currentUser.name %></span>
+            <form action="/logout" method="post" style="display:inline">
+                <button type="submit">Deconnexion</button>
+            </form>
+        <% } else { %>
+            <a href="/login">Connexion</a>
+            <a href="/register">Inscription</a>
+        <% } %>
+    </nav>
+</header>
+<main class="container">

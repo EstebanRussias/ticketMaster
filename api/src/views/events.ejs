@@ -1,0 +1,46 @@
+<%- include('partials/header') %>
+
+<h1>Evenements a venir</h1>
+
+<form method="get" action="/" class="filters">
+    <input type="text" name="q" placeholder="Artiste..." value="<%= filters.q %>">
+    <select name="city">
+        <option value="">Toutes les villes</option>
+        <% cities.forEach(c => { %>
+            <option value="<%= c %>" <%= filters.city === c ? 'selected' : '' %>><%= c %></option>
+        <% }) %>
+    </select>
+    <select name="sort">
+        <option value="date" <%= filters.sort === 'date' ? 'selected' : '' %>>Date</option>
+        <option value="popularity" <%= filters.sort === 'popularity' ? 'selected' : '' %>>Popularite</option>
+        <option value="price" <%= filters.sort === 'price' ? 'selected' : '' %>>Prix</option>
+    </select>
+    <button type="submit">Filtrer</button>
+</form>
+
+<p class="muted"><%= result.total %> evenement(s)</p>
+<div class="grid">
+    <% result.items.forEach(e => { %>
+        <a class="card" href="/events/<%= e.eventId %>">
+            <h2><%= e.artist %></h2>
+            <p><%= e.locationName %> - <%= e.locationCity %></p>
+            <p><%= new Date(e.eventDate).toLocaleDateString('fr-FR') %> &middot; des <%= e.minPrice %> EUR</p>
+            <p class="muted">
+                <% if (e.genre) { %><span class="tag"><%= e.genre %></span><% } %>
+                <% if (e.rating && e.rating.count) { %>&#9733; <%= e.rating.avg %> (<%= e.rating.count %>)<% } %>
+            </p>
+            <p class="muted"><%= e.ticketsSold %> billet(s) vendu(s)</p>
+        </a>
+    <% }) %>
+</div>
+
+<% const pages = Math.ceil(result.total / result.limit); %>
+<% if (pages > 1) { %>
+    <p class="pager">
+        <% if (result.page > 1) { %><a href="/?q=<%= encodeURIComponent(filters.q) %>&city=<%= encodeURIComponent(filters.city) %>&sort=<%= filters.sort %>&page=<%= result.page - 1 %>">&larr; Precedent</a><% } %>
+        Page <%= result.page %> / <%= pages %>
+        <% if (result.page < pages) { %><a href="/?q=<%= encodeURIComponent(filters.q) %>&city=<%= encodeURIComponent(filters.city) %>&sort=<%= filters.sort %>&page=<%= result.page + 1 %>">Suivant &rarr;</a><% } %>
+    </p>
+<% } %>
+
+<%- include('partials/footer') %>

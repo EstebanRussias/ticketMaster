@@ -1,0 +1,104 @@
+<%- include('partials/header') %>
+
+<a href="/">&larr; Retour</a>
+<h1><%= event.artist %></h1>
+<p><%= event.locationName %> - <%= event.locationAdress %>, <%= event.locationCity %></p>
+<p><strong><%= new Date(event.eventDate).toLocaleString('fr-FR') %></strong></p>
+
+<% if (error) { %>
+    <p class="error"><%= error %></p>
+<% } %>
+
+<% const c = event.content; %>
+<% if (c) { %>
+    <section class="panel">
+        <p>
+            <span class="tag"><%= c.genre %></span>
+            <% (c.tags || []).forEach(t => { %><span class="tag"><%= t %></span><% }) %>
+            <% if (c.rating && c.rating.count) { %> &#9733; <%= c.rating.avg %> / 5 (<%= c.rating.count %> avis)<% } %>
+        </p>
+        <p><%= c.description %></p>
+        <% if (c.lineup && c.lineup.length) { %>
+            <h3>Programme</h3>
+            <ul>
+                <% c.lineup.forEach(l => { %><li><%= l.startTime %> &mdash; <%= l.name %></li><% }) %>
+            </ul>
+        <% } %>
+        <% if (c.venueInfo) { %>
+            <p class="muted">
+                Ouverture des portes : <%= c.venueInfo.doorsOpen %> &middot; Age minimum : <%= c.venueInfo.ageLimit %> ans
+                <% if (c.venueInfo.access && c.venueInfo.access.length) { %>&middot; Acces : <%= c.venueInfo.access.join(', ') %><% } %>
+            </p>
+        <% } %>
+    </section>
+<% } %>
+
+<h2>Categories</h2>
+<div class="grid">
+    <% event.categories.forEach(cat => { %>
+        <div class="card">
+            <h3><%= cat.categoryName %></h3>
+            <p><%= cat.price %> EUR</p>
+            <p><%= cat.availableCount %> place(s) disponible(s) / <%= cat.totalQuantity %></p>
+            <% if (currentUser) { %>
+                <form action="/events/<%= event.eventId %>/buy" method="post">
+                    <input type="hidden" name="categoryId" value="<%= cat.categoryId %>">
+                    <button type="submit" <% if (cat.availableCount <= 0) { %>disabled<% } %>>
+                        <%= cat.availableCount <= 0 ? 'Complet' : 'Acheter' %>
+                    </button>
+                </form>
+            <% } %>
+        </div>
+    <% }) %>
+</div>
+<% if (!currentUser) { %>
+    <p><a href="/login">Connectez-vous</a> pour acheter un billet.</p>
+<% } %>
+
+<h2>Avis (<%= reviews.total %>)</h2>
+<% const maxCount = Math.max(1, ...distribution.map(d => d.count)); %>
+<div class="distribution">
+    <% distribution.slice().reverse().forEach(d => { %>
+        <div><span><%= d.stars %> &#9733;</span><i style="width: <%= Math.round(d.count / maxCount * 100) %>%"></i><span><%= d.count %></span></div>
+    <% }) %>
+</div>
+
+<% if (currentUser) { %>
+    <form id="review-form" class="form">
+        <label>Note
+            <select name="rating">
+                <% [5,4,3,2,1].forEach(n => { %><option value="<%= n %>"><%= n %> / 5</option><% }) %>
+            </select>
+        </label>
+        <label>Commentaire <input type="text" name="comment" maxlength="500"></label>
+        <button type="submit">Publier mon avis</button>
+        <p id="review-msg" class="muted"></p>
+    </form>
+    <script>
+        // Le front appelle l'API REST JSON (POST /api/events/:id/reviews)
+        document.getElementById('review-form').addEventListener('submit', async (ev) => {
+            ev.preventDefault();
+            const f = ev.target;
+            const res = await fetch('/api/events/<%= event.eventId %>/reviews', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rating: Number(f.rating.value), comment: f.comment.value }),
+            });
+            const body = await res.json().catch(() => ({}));
+            if (res.ok) return location.reload();
+            document.getElementById('review-msg').textContent = body.error || 'Erreur';
+        });
+    </script>
+<% } %>
+
+<ul class="reviews">
+    <% reviews.items.forEach(r => { %>
+        <li>
+            <strong><%= r.author %></strong> &#9733; <%= r.rating %>/5
+            <span class="muted"><%= new Date(r.createdAt).toLocaleDateString('fr-FR') %></span>
+            <br><%= r.comment %>
+        </li>
+    <% }) %>
+</ul>
+
+<%- include('partials/footer') %>
