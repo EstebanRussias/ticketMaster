@@ -1,9 +1,3 @@
-#!/bin/bash
-# =====================================================================
-# 06_security.sh : roles SQL a droits limites.
-# Les mots de passe viennent des variables d'environnement (.env),
-# ils ne sont donc jamais ecrits dans le depot.
-# =====================================================================
 set -e
 
 mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" <<EOSQL

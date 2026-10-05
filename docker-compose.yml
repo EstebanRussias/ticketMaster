@@ -79,6 +79,32 @@ services:
     ports:
       - "8080:8080"
 
+  # Interface web d'administration MySQL : http://localhost:8081
+  adminer:
+    image: adminer:latest
+    restart: unless-stopped
+    depends_on:
+      mysql: { condition: service_healthy }
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql
+    ports:
+      - "8081:8080"
+
+  # Interface web d'administration MongoDB : http://localhost:8082
+  mongo-express:
+    image: mongo-express:latest
+    restart: unless-stopped
+    depends_on:
+      mongo: { condition: service_healthy }
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_ROOT_USER:-mongo_root}:${MONGO_ROOT_PASSWORD:-demo_mongo_root_pwd}@mongo:27017/
+      ME_CONFIG_BASICAUTH: "true"
+      ME_CONFIG_BASICAUTH_ENABLED: "true"
+      ME_CONFIG_BASICAUTH_USERNAME: ${ME_USER:-admin}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${ME_PASSWORD:-demo_me_pwd}
+    ports:
+      - "8082:8081"
+
 volumes:
   mysql_data:
   mongo_data:
