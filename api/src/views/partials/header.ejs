@@ -12,6 +12,8 @@
     <nav>
         <% if (currentUser) { %>
             <a href="/mytickets">Mes billets</a>
+            <a href="/myreviews">Mes avis</a>
+            <% if (currentUser.role === 'admin') { %><a href="/admin/content">Contenus</a><% } %>
             <span class="user">Bonjour <%= currentUser.name %></span>
             <form action="/logout" method="post" style="display:inline">
                 <button type="submit">Deconnexion</button>

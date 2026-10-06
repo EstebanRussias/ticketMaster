@@ -1,0 +1,35 @@
+<%- include('partials/header') %>
+
+<h1>Mes avis</h1>
+
+<% if (!reviews.length) { %>
+    <p class="muted">Vous n'avez encore publie aucun avis.</p>
+<% } else { %>
+    <table>
+        <tr><th>Evenement</th><th>Note</th><th>Commentaire</th><th>Date</th><th></th></tr>
+        <% reviews.forEach(r => { %>
+            <tr>
+                <td><a href="/events/<%= r.eventId %>"><%= r.artist %></a></td>
+                <td>&#9733; <%= r.rating %>/5</td>
+                <td><%= r.comment %></td>
+                <td class="muted"><%= new Date(r.updatedAt || r.createdAt).toLocaleDateString('fr-FR') %></td>
+                <td class="actions">
+                    <a href="/events/<%= r.eventId %>#review-form">Modifier</a>
+                    <button type="button" class="danger small" data-event="<%= r.eventId %>">Supprimer</button>
+                </td>
+            </tr>
+        <% }) %>
+    </table>
+    <p id="msg" class="error"></p>
+    <script>
+        // Suppression via l'API REST (collection MongoDB "reviews")
+        document.querySelectorAll('[data-event]').forEach((btn) => btn.addEventListener('click', async () => {
+            if (!confirm('Supprimer cet avis ?')) return;
+            const res = await fetch('/api/events/' + btn.dataset.event + '/reviews/me', { method: 'DELETE' });
+            if (res.ok) return location.reload();
+            document.getElementById('msg').textContent = (await res.json().catch(() => ({}))).error || 'Erreur';
+        }));
+    </script>
+<% } %>
+
+<%- include('partials/footer') %>

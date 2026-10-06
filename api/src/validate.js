@@ -1,3 +1,4 @@
+const { ObjectId } = require('mongodb');
 const { HttpError } = require('./middleware/errors');
 
 const bad = (msg) => new HttpError(400, msg);
@@ -40,4 +41,9 @@ const stringArray = (v, label, max = 20) => {
     return v.map((x) => str(x, label, { max: 80 }));
 };
 
-module.exports = { str, int, num, email, date, optional, stringArray, bad };
+const objectId = (v, label = 'id') => {
+    if (typeof v !== 'string' || !/^[0-9a-f]{24}$/i.test(v)) throw bad(`${label} invalide (ObjectId attendu)`);
+    return new ObjectId(v);
+};
+
+module.exports = { str, int, num, email, date, optional, stringArray, objectId, bad };

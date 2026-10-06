@@ -120,6 +120,56 @@ test('administration : creation, lecture, suppression logique d\'un evenement', 
     assert.equal((await admin('GET', `/api/events/${id}/content`)).status, 404);
 });
 
+test('MongoDB : CRUD complet sur event_content (admin)', async () => {
+    const admin = await login('admin@ticketmaster.local');
+    const created = await admin('POST', '/api/events', {
+        artist: 'Mongo Crud', idLocation: 1, eventDate: new Date(Date.now() + 864e5).toISOString(),
+        categories: [{ name: 'Standard', price: 20, nbQuantity: 5 }],
+    });
+    const id = created.body.eventId;
+    const url = `/api/events/${id}/content`;
+
+    assert.equal((await admin('POST', url, { genre: 'jazz' })).status, 400);
+    const post = await admin('POST', url, { genre: 'jazz', description: 'Soiree jazz de test.', tags: ['jazz'] });
+    assert.equal(post.status, 201);
+    assert.deepEqual(post.body.rating, { avg: 0, count: 0 });
+    assert.equal((await admin('POST', url, { genre: 'jazz', description: 'Doublon refuse.' })).status, 409);
+
+    const put = await admin('PUT', url, { tags: ['jazz', 'live'], lineup: [{ name: 'Trio', startTime: '21:00' }] });
+    assert.equal(put.status, 200);
+    assert.deepEqual(put.body.tags, ['jazz', 'live']);
+    assert.equal(put.body.description, 'Soiree jazz de test.');
+
+    const list = await admin('GET', '/api/content?genre=jazz&limit=100');
+    assert.ok(list.body.items.every((d) => d.genre === 'jazz'));
+
+    assert.equal((await admin('DELETE', url)).status, 204);
+    assert.equal((await admin('GET', url)).status, 404);
+    assert.equal((await admin('DELETE', url)).status, 404);
+    await admin('DELETE', `/api/events/${id}`);
+});
+
+test('MongoDB : lecture et moderation des avis, journal d\'activite', async () => {
+    const reviews = (await client()('GET', '/api/events/1/reviews?limit=1')).body.items;
+    assert.ok(reviews.length);
+    const one = await client()('GET', `/api/reviews/${reviews[0]._id}`);
+    assert.equal(one.status, 200);
+    assert.equal(one.body.eventId, 1);
+    assert.equal((await client()('GET', '/api/reviews/pas-un-objectid')).status, 400);
+    assert.equal((await client()('GET', '/api/reviews/000000000000000000000000')).status, 404);
+
+    const user = await login('jean@example.com');
+    assert.ok(Array.isArray((await user('GET', '/api/me/reviews')).body));
+    assert.equal((await user('DELETE', `/api/reviews/${reviews[0]._id}`)).status, 403);
+    assert.equal((await user('GET', '/api/activity')).status, 403);
+
+    const admin = await login('admin@ticketmaster.local');
+    const log = await admin('GET', '/api/activity?type=view&limit=5');
+    assert.equal(log.status, 200);
+    assert.ok(log.body.items.every((a) => a.type === 'view'));
+    assert.equal((await admin('GET', '/api/activity?type=autre')).status, 400);
+});
+
 test('requetes avancees : agregats SQL et pipelines MongoDB', async () => {
     const c = client();
     const city = (await c('GET', '/api/stats/sql/revenue-by-city')).body;

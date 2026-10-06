@@ -1,0 +1,53 @@
+<%- include('partials/header') %>
+
+<h1>Contenus editoriaux (MongoDB)</h1>
+<p class="muted">Collection <code>event_content</code> : un document par evenement, <code>_id</code> = id MySQL de l'evenement.</p>
+
+<form method="get" action="/admin/content" class="filters">
+    <select name="genre">
+        <option value="">Tous les genres</option>
+        <% genres.forEach(g => { %>
+            <option value="<%= g %>" <%= genre === g ? 'selected' : '' %>><%= g %></option>
+        <% }) %>
+    </select>
+    <button type="submit">Filtrer</button>
+</form>
+
+<form id="goto" class="filters">
+    <input type="number" name="eventId" min="1" placeholder="Id de l'evenement" required>
+    <button type="submit">Creer / editer un contenu</button>
+</form>
+
+<p class="muted"><%= result.total %> document(s)</p>
+<table>
+    <tr><th>Id</th><th>Artiste</th><th>Genre</th><th>Tags</th><th>Note</th><th>Modifie le</th><th></th></tr>
+    <% result.items.forEach(d => { %>
+        <tr>
+            <td><%= d._id %></td>
+            <td><a href="/events/<%= d._id %>"><%= d.artist %></a></td>
+            <td><span class="tag"><%= d.genre %></span></td>
+            <td class="muted"><%= (d.tags || []).join(', ') %></td>
+            <td><% if (d.rating && d.rating.count) { %>&#9733; <%= d.rating.avg %> (<%= d.rating.count %>)<% } else { %>-<% } %></td>
+            <td class="muted"><%= d.updatedAt ? new Date(d.updatedAt).toLocaleDateString('fr-FR') : '-' %></td>
+            <td><a href="/admin/content/<%= d._id %>">Editer</a></td>
+        </tr>
+    <% }) %>
+</table>
+
+<% const pages = Math.ceil(result.total / result.limit); %>
+<% if (pages > 1) { %>
+    <p class="pager">
+        <% if (result.page > 1) { %><a href="/admin/content?genre=<%= encodeURIComponent(genre) %>&page=<%= result.page - 1 %>">&larr; Precedent</a><% } %>
+        Page <%= result.page %> / <%= pages %>
+        <% if (result.page < pages) { %><a href="/admin/content?genre=<%= encodeURIComponent(genre) %>&page=<%= result.page + 1 %>">Suivant &rarr;</a><% } %>
+    </p>
+<% } %>
+
+<script>
+    document.getElementById('goto').addEventListener('submit', (ev) => {
+        ev.preventDefault();
+        location.href = '/admin/content/' + ev.target.eventId.value;
+    });
+</script>
+
+<%- include('partials/footer') %>
