@@ -27,6 +27,13 @@ async function getReviewsWithAuthors(eventId, paging) {
     return result;
 }
 
+async function getUserReviewsWithEvents(userId) {
+    const reviews = await content.listUserReviews(userId);
+    const rows = await sql.getEventsByIds([...new Set(reviews.map((r) => r.eventId))]);
+    const byId = new Map(rows.map((e) => [e.eventId, e]));
+    return reviews.map((r) => ({ ...r, artist: byId.get(r.eventId)?.artist || 'Evenement supprime', eventDate: byId.get(r.eventId)?.eventDate }));
+}
+
 async function postReview(eventId, userId, { rating, comment }) {
     if (!(await sql.getEvent(eventId))) throw new HttpError(404, 'Evenement introuvable');
     if (!(await sql.userHasTicketForEvent(userId, eventId))) {
@@ -62,4 +69,4 @@ async function deleteEventEverywhere(eventId) {
     return content.deleteContent(eventId);
 }
 
-module.exports = { listEventsWithRatings, getFullEvent, getReviewsWithAuthors, postReview, topEvents, trendingEvents, deleteEventEverywhere };
+module.exports = { listEventsWithRatings, getFullEvent, getReviewsWithAuthors, getUserReviewsWithEvents, postReview, topEvents, trendingEvents, deleteEventEverywhere };

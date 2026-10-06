@@ -6,6 +6,24 @@ async function getContent(eventId) {
     return (await collection('event_content')).findOne({ _id: eventId });
 }
 
+async function listContent({ genre, page = 1, limit = 20 }) {
+    const filter = genre ? { genre } : {};
+    const col = await collection('event_content');
+    const [items, total] = await Promise.all([
+        col.find(filter).project({ artist: 1, genre: 1, tags: 1, rating: 1, updatedAt: 1 })
+            .sort({ _id: 1 }).skip((page - 1) * limit).limit(limit).toArray(),
+        col.countDocuments(filter),
+    ]);
+    return { total, page, limit, items };
+}
+
+async function createContent(eventId, data) {
+    const now = new Date();
+    const doc = { _id: eventId, ...data, rating: { avg: 0, count: 0 }, createdAt: now, updatedAt: now };
+    await (await collection('event_content')).insertOne(doc);
+    return doc;
+}
+
 async function getRatings(eventIds) {
     if (!eventIds.length) return new Map();
     const docs = await (await collection('event_content'))
@@ -60,6 +78,18 @@ async function listReviews(eventId, { page = 1, limit = 10 }) {
     return { total, page, limit, items };
 }
 
+async function getReview(reviewId) {
+    return (await collection('reviews')).findOne({ _id: reviewId });
+}
+
+async function getUserReview(eventId, userId) {
+    return (await collection('reviews')).findOne({ eventId, userId });
+}
+
+async function listUserReviews(userId) {
+    return (await collection('reviews')).find({ userId }).sort({ createdAt: -1 }).toArray();
+}
+
 async function recomputeRating(eventId) {
     const [agg] = await (await collection('reviews')).aggregate([
         { $match: { eventId } },
@@ -90,6 +120,12 @@ async function deleteReview(eventId, userId) {
     const res = await (await collection('reviews')).deleteOne({ eventId, userId });
     if (res.deletedCount) await recomputeRating(eventId);
     return res.deletedCount > 0;
+}
+
+async function deleteReviewById(reviewId) {
+    const review = await (await collection('reviews')).findOneAndDelete({ _id: reviewId });
+    if (review) await recomputeRating(review.eventId);
+    return review;
 }
 
 async function ratingDistribution(eventId) {
@@ -140,6 +176,18 @@ async function trending({ days = 7, limit = 10 }) {
     ]).toArray();
 }
 
+async function listActivity({ type, eventId, page = 1, limit = 50 }) {
+    const filter = {};
+    if (type) filter.type = type;
+    if (eventId) filter.eventId = eventId;
+    const col = await collection('activity_log');
+    const [items, total] = await Promise.all([
+        col.find(filter).sort({ at: -1 }).skip((page - 1) * limit).limit(limit).toArray(),
+        col.countDocuments(filter),
+    ]);
+    return { total, page, limit, items };
+}
+
 function logActivity({ type, userId = null, eventId = null, meta = {} }) {
     collection('activity_log')
         .then((c) => c.insertOne({ type, userId, eventId, meta, at: new Date() }))
@@ -147,7 +195,8 @@ function logActivity({ type, userId = null, eventId = null, meta = {} }) {
 }
 
 module.exports = {
-    getContent, getRatings, upsertContent, deleteContent, searchContent,
-    listReviews, addReview, updateReview, deleteReview, recomputeRating,
-    ratingDistribution, genreStats, topRated, trending, logActivity,
+    getContent, listContent, createContent, getRatings, upsertContent, deleteContent, searchContent,
+    listReviews, getReview, getUserReview, listUserReviews, addReview, updateReview, deleteReview,
+    deleteReviewById, recomputeRating, ratingDistribution, genreStats, topRated, trending,
+    listActivity, logActivity,
 };

@@ -1,0 +1,77 @@
+<%- include('partials/header') %>
+
+<a href="/admin/content">&larr; Contenus</a>
+<h1><%= doc ? 'Modifier' : 'Creer' %> le contenu de l'evenement n&deg;<%= event.eventId %></h1>
+<p class="muted"><%= event.artist %> &middot; <%= event.locationCity %> &middot; <%= new Date(event.eventDate).toLocaleDateString('fr-FR') %></p>
+
+<% const vi = (doc && doc.venueInfo) || {}; %>
+<form id="content-form" class="form wide">
+    <label>Artiste <input type="text" name="artist" maxlength="150" required value="<%= doc ? doc.artist : event.artist %>"></label>
+    <label>Genre <input type="text" name="genre" maxlength="50" required value="<%= doc ? doc.genre : '' %>"></label>
+    <label>Description <textarea name="description" rows="5" minlength="10" maxlength="4000" required><%= doc ? doc.description : '' %></textarea></label>
+    <label>Tags (separes par des virgules) <input type="text" name="tags" value="<%= doc && doc.tags ? doc.tags.join(', ') : '' %>"></label>
+    <label>Programme (une ligne par passage : HH:MM Nom)
+        <textarea name="lineup" rows="4"><%= doc && doc.lineup ? doc.lineup.map(l => l.startTime + ' ' + l.name).join('\n') : '' %></textarea>
+    </label>
+    <label>Ouverture des portes (HH:MM) <input type="text" name="doorsOpen" maxlength="5" value="<%= vi.doorsOpen || '' %>"></label>
+    <label>Age minimum <input type="number" name="ageLimit" min="0" max="99" value="<%= vi.ageLimit ?? '' %>"></label>
+    <label>Acces (separes par des virgules) <input type="text" name="access" value="<%= (vi.access || []).join(', ') %>"></label>
+    <div class="actions">
+        <button type="submit"><%= doc ? 'Enregistrer' : 'Creer le document' %></button>
+        <% if (doc) { %><button type="button" class="danger" id="content-delete">Supprimer le document (et ses avis)</button><% } %>
+    </div>
+    <p id="msg" class="error"></p>
+</form>
+
+<% if (doc) { %>
+    <h2>Document brut</h2>
+    <pre class="panel"><%= JSON.stringify(doc, null, 2) %></pre>
+<% } %>
+
+<script>
+    // CRUD sur la collection MongoDB event_content via l'API REST
+    const url = '/api/events/<%= event.eventId %>/content';
+    const exists = <%= doc ? 'true' : 'false' %>;
+    const list = (s) => s.split(',').map((x) => x.trim()).filter(Boolean);
+    const msg = document.getElementById('msg');
+
+    async function send(method, body) {
+        const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: body && JSON.stringify(body),
+        });
+        if (res.ok) return true;
+        msg.textContent = (await res.json().catch(() => ({}))).error || 'Erreur';
+        return false;
+    }
+
+    document.getElementById('content-form').addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const f = ev.target;
+        const lineup = f.lineup.value.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
+            const [startTime, ...name] = l.split(/\s+/);
+            return { startTime, name: name.join(' ') };
+        });
+        const venueInfo = { access: list(f.access.value) };
+        if (f.doorsOpen.value) venueInfo.doorsOpen = f.doorsOpen.value;
+        if (f.ageLimit.value !== '') venueInfo.ageLimit = Number(f.ageLimit.value);
+        const body = {
+            artist: f.artist.value,
+            genre: f.genre.value,
+            description: f.description.value,
+            tags: list(f.tags.value),
+            lineup,
+            venueInfo,
+        };
+        if (await send(exists ? 'PUT' : 'POST', body)) location.reload();
+    });
+
+    document.getElementById('content-delete')?.addEventListener('click', async () => {
+        if (confirm('Supprimer ce document et tous les avis associes ?') && await send('DELETE')) {
+            location.href = '/admin/content';
+        }
+    });
+</script>
+
+<%- include('partials/footer') %>
