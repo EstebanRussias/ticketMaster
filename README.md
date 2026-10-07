@@ -35,6 +35,7 @@ Les valeurs de démonstration par défaut permettent de lancer la pile sans conf
 | Front web | http://localhost:3000 |
 | API REST | http://localhost:3000/api (santé : `/api/health`) |
 | MySQL | `localhost:3306` (base `billeterie`) |
+| Adminer (interface MySQL) | http://localhost:8080 — serveur `mysql`, utilisateur `root`, mot de passe `demo_root_pwd`, base `billeterie` |
 | MongoDB | `localhost:27017` (base `ticketmaster`) |
 
 **Comptes de démonstration** (mot de passe `password123`) : `jean@example.com`, `alice@example.com` (utilisateurs), `admin@ticketmaster.local` (administrateur).
@@ -127,7 +128,7 @@ Détails dans la section 8 du [document de présentation](docs/presentation.md).
 
 ## Outils d'IA utilisés
 
-Ce projet a été développé avec l'assistance de **Claude Code** (Anthropic) pour le front et la documentation
+Ce projet a été développé avec l'assistance de **Claude Code** (Anthropic) pour le front et la documentation et la generation de fake data.
 
 ## Notes
 

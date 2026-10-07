@@ -1,11 +1,7 @@
--- =====================================================================
--- 05_triggers.sql : declencheurs (cree APRES le peuplement en masse)
--- =====================================================================
 USE billeterie;
 
 DELIMITER $$
 
--- Garde-fou : meme un INSERT direct ne peut pas depasser le stock
 CREATE TRIGGER trg_ticket_before_insert
 BEFORE INSERT ON ticket
 FOR EACH ROW
@@ -15,7 +11,6 @@ BEGIN
     END IF;
 END$$
 
--- Audit des achats
 CREATE TRIGGER trg_ticket_after_insert
 AFTER INSERT ON ticket
 FOR EACH ROW
@@ -23,7 +18,6 @@ BEGIN
     INSERT INTO ticket_audit (idTicket, idUser, action) VALUES (NEW.id, NEW.idUser, 'PURCHASE');
 END$$
 
--- Audit des annulations
 CREATE TRIGGER trg_ticket_after_update
 AFTER UPDATE ON ticket
 FOR EACH ROW
@@ -33,7 +27,6 @@ BEGIN
     END IF;
 END$$
 
--- Suppression logique d'un evenement : cascade sur categories et billets
 CREATE TRIGGER trg_event_after_update
 AFTER UPDATE ON event
 FOR EACH ROW

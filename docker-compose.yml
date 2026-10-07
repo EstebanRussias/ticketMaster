@@ -1,7 +1,3 @@
-# Pile complete : MySQL (relationnel) + MongoDB (document) + peuplement + API/front.
-#   docker compose up --build
-# Les variables viennent de .env (voir .env.example) ; des valeurs de DEMO
-# par defaut permettent de lancer la pile sans aucune manipulation.
 services:
   mysql:
     image: mysql:8.0
