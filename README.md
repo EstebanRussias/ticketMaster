@@ -93,10 +93,14 @@ Le front est servi par le même conteneur que l'API (rendu serveur) : il n'y a d
 | `GET /api/locations` · `POST /api/locations` 👑 | MySQL | salles |
 | `POST /api/events/:id/tickets` 🔒 | MySQL | achat (procédure `sp_buy_ticket`) |
 | `GET /api/me/tickets` 🔒 · `DELETE /api/tickets/:id` 🔒 | MySQL | mes billets · annulation |
-| `GET/PUT/DELETE /api/events/:id/content` (PUT/DELETE 👑) | Mongo | contenu éditorial |
+| `GET /api/content?genre=&page=&limit=` | Mongo | liste paginée des contenus éditoriaux |
+| `GET/POST/PUT/DELETE /api/events/:id/content` (POST/PUT/DELETE 👑) | Mongo | CRUD contenu éditorial (`POST` : création, 409 si existant ; `PUT` : mise à jour partielle / upsert ; `DELETE` : supprime aussi les avis) |
 | `GET /api/content/search?q=&genre=&tag=&performer=&minRating=&maxAge=` | Mongo | recherche texte + filtres imbriqués |
 | `GET/POST /api/events/:id/reviews` (POST 🔒) | Croisé | avis (POST : exige un billet MySQL) ; auteurs lus dans MySQL |
-| `PUT/DELETE /api/events/:id/reviews/me` 🔒 | Mongo | modifier / supprimer mon avis |
+| `GET/PUT/DELETE /api/events/:id/reviews/me` 🔒 | Mongo | lire / modifier / supprimer mon avis |
+| `GET /api/me/reviews` 🔒 | Croisé | tous mes avis, enrichis de l'événement MySQL |
+| `GET /api/reviews/:reviewId` · `DELETE /api/reviews/:reviewId` 👑 | Mongo | lecture d'un avis par `ObjectId` · modération (recalcule la note) |
+| `GET /api/activity?type=&eventId=&page=&limit=` 👑 | Mongo | journal d'activité (collection TTL) |
 | `GET /api/events/:id/rating-distribution` | Mongo | répartition des notes (`$group`) |
 | `GET /api/events/:id/full` | **Croisé** | fiche complète : stock MySQL + contenu MongoDB |
 | `GET /api/stats/top-events` · `/trending` | **Croisé** | classements MongoDB enrichis par MySQL |

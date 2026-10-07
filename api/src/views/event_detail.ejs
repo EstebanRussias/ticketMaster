@@ -65,30 +65,23 @@
 
 <% if (currentUser) { %>
     <form id="review-form" class="form">
+        <h3><%= myReview ? 'Mon avis' : 'Laisser un avis' %></h3>
         <label>Note
             <select name="rating">
-                <% [5,4,3,2,1].forEach(n => { %><option value="<%= n %>"><%= n %> / 5</option><% }) %>
+                <% [5,4,3,2,1].forEach(n => { %><option value="<%= n %>" <%= myReview && myReview.rating === n ? 'selected' : '' %>><%= n %> / 5</option><% }) %>
             </select>
         </label>
-        <label>Commentaire <input type="text" name="comment" maxlength="500"></label>
-        <button type="submit">Publier mon avis</button>
+        <label>Commentaire <input type="text" name="comment" maxlength="2000" value="<%= myReview ? myReview.comment : '' %>"></label>
+        <div class="actions">
+            <button type="submit"><%= myReview ? 'Modifier mon avis' : 'Publier mon avis' %></button>
+            <% if (myReview) { %><button type="button" class="danger" id="review-delete">Supprimer mon avis</button><% } %>
+        </div>
         <p id="review-msg" class="muted"></p>
     </form>
-    <script>
-        // Le front appelle l'API REST JSON (POST /api/events/:id/reviews)
-        document.getElementById('review-form').addEventListener('submit', async (ev) => {
-            ev.preventDefault();
-            const f = ev.target;
-            const res = await fetch('/api/events/<%= event.eventId %>/reviews', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rating: Number(f.rating.value), comment: f.comment.value }),
-            });
-            const body = await res.json().catch(() => ({}));
-            if (res.ok) return location.reload();
-            document.getElementById('review-msg').textContent = body.error || 'Erreur';
-        });
-    </script>
+<% } %>
+
+<% if (currentUser && currentUser.role === 'admin') { %>
+    <p><a href="/admin/content/<%= event.eventId %>">Gerer le contenu MongoDB de cet evenement</a></p>
 <% } %>
 
 <ul class="reviews">
@@ -96,9 +89,42 @@
         <li>
             <strong><%= r.author %></strong> &#9733; <%= r.rating %>/5
             <span class="muted"><%= new Date(r.createdAt).toLocaleDateString('fr-FR') %></span>
+            <% if (currentUser && currentUser.role === 'admin') { %>
+                <button type="button" class="danger small" data-moderate="<%= r._id %>">Supprimer</button>
+            <% } %>
             <br><%= r.comment %>
         </li>
     <% }) %>
 </ul>
+
+<% if (currentUser) { %>
+    <script>
+        // Le front appelle l'API REST JSON (collection MongoDB "reviews")
+        const base = '/api/events/<%= event.eventId %>/reviews';
+        const msg = document.getElementById('review-msg');
+        async function call(method, url, body) {
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: body && JSON.stringify(body),
+            });
+            if (res.ok) return location.reload();
+            const data = await res.json().catch(() => ({}));
+            msg.textContent = data.error || 'Erreur';
+        }
+        document.getElementById('review-form').addEventListener('submit', (ev) => {
+            ev.preventDefault();
+            const f = ev.target;
+            const body = { rating: Number(f.rating.value), comment: f.comment.value };
+            <% if (myReview) { %>call('PUT', base + '/me', body);<% } else { %>call('POST', base, body);<% } %>
+        });
+        document.getElementById('review-delete')?.addEventListener('click', () => {
+            if (confirm('Supprimer votre avis ?')) call('DELETE', base + '/me');
+        });
+        document.querySelectorAll('[data-moderate]').forEach((btn) => btn.addEventListener('click', () => {
+            if (confirm('Supprimer cet avis ?')) call('DELETE', '/api/reviews/' + btn.dataset.moderate);
+        }));
+    </script>
+<% } %>
 
 <%- include('partials/footer') %>

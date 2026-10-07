@@ -145,12 +145,13 @@ router.delete('/tickets/:id', requireAuth, wrap(async (req, res) => {
     res.status(204).end();
 }));
 
-function parseContent(body, fallbackArtist) {
+// create = true : genre et description sont obligatoires (validateur $jsonSchema)
+function parseContent(body, fallbackArtist, { create = false } = {}) {
     if (typeof body !== 'object' || body === null) throw v.bad('corps invalide');
     const out = {};
     out.artist = v.str(body.artist ?? fallbackArtist, 'artist', { max: 150 });
-    if (body.genre !== undefined) out.genre = v.str(body.genre, 'genre', { max: 50 });
-    if (body.description !== undefined) out.description = v.str(body.description, 'description', { min: 10, max: 4000 });
+    if (create || body.genre !== undefined) out.genre = v.str(body.genre, 'genre', { max: 50 });
+    if (create || body.description !== undefined) out.description = v.str(body.description, 'description', { min: 10, max: 4000 });
     if (body.tags !== undefined) out.tags = v.stringArray(body.tags, 'tags');
     if (body.lineup !== undefined) {
         if (!Array.isArray(body.lineup) || body.lineup.length > 20) throw v.bad('lineup invalide');
@@ -170,10 +171,22 @@ function parseContent(body, fallbackArtist) {
     return out;
 }
 
+router.get('/content', wrap(async (req, res) => {
+    res.json(await content.listContent({ genre: req.query.genre, ...paging(req.query) }));
+}));
+
 router.get('/events/:id/content', wrap(async (req, res) => {
     const doc = await content.getContent(parseId(req.params.id));
     if (!doc) throw new HttpError(404, 'Contenu introuvable');
     res.json(doc);
+}));
+
+router.post('/events/:id/content', requireAdmin, wrap(async (req, res) => {
+    const id = parseId(req.params.id);
+    const event = await sql.getEvent(id);
+    if (!event) throw new HttpError(404, 'Evenement introuvable');
+    if (await content.getContent(id)) throw new HttpError(409, 'Contenu deja existant (utiliser PUT)');
+    res.status(201).json(await content.createContent(id, parseContent(req.body, event.artist, { create: true })));
 }));
 
 router.put('/events/:id/content', requireAdmin, wrap(async (req, res) => {
@@ -213,6 +226,12 @@ router.post('/events/:id/reviews', requireAuth, wrap(async (req, res) => {
     res.status(201).json(review);
 }));
 
+router.get('/events/:id/reviews/me', requireAuth, wrap(async (req, res) => {
+    const review = await content.getUserReview(parseId(req.params.id), req.session.user.id);
+    if (!review) throw new HttpError(404, 'Avis introuvable');
+    res.json(review);
+}));
+
 router.put('/events/:id/reviews/me', requireAuth, wrap(async (req, res) => {
     const ok = await content.updateReview(parseId(req.params.id), req.session.user.id, {
         rating: v.optional(v.int, req.body.rating, 'rating', { min: 1, max: 5 }),
@@ -227,6 +246,35 @@ router.delete('/events/:id/reviews/me', requireAuth, wrap(async (req, res) => {
         throw new HttpError(404, 'Avis introuvable');
     }
     res.status(204).end();
+}));
+
+router.get('/me/reviews', requireAuth, wrap(async (req, res) => {
+    res.json(await cross.getUserReviewsWithEvents(req.session.user.id));
+}));
+
+router.get('/reviews/:reviewId', wrap(async (req, res) => {
+    const review = await content.getReview(v.objectId(req.params.reviewId, 'reviewId'));
+    if (!review) throw new HttpError(404, 'Avis introuvable');
+    res.json(review);
+}));
+
+// Moderation : un administrateur supprime n'importe quel avis (la note moyenne est recalculee)
+router.delete('/reviews/:reviewId', requireAdmin, wrap(async (req, res) => {
+    if (!(await content.deleteReviewById(v.objectId(req.params.reviewId, 'reviewId')))) {
+        throw new HttpError(404, 'Avis introuvable');
+    }
+    res.status(204).end();
+}));
+
+router.get('/activity', requireAdmin, wrap(async (req, res) => {
+    const types = ['view', 'search', 'purchase'];
+    if (req.query.type && !types.includes(req.query.type)) throw v.bad(`type invalide (${types.join(', ')})`);
+    res.json(await content.listActivity({
+        type: req.query.type,
+        eventId: v.optional(v.int, req.query.eventId, 'eventId'),
+        page: v.int(req.query.page ?? 1, 'page', { min: 1 }),
+        limit: v.int(req.query.limit ?? 50, 'limit', { min: 1, max: 200 }),
+    }));
 }));
 
 router.get('/events/:id/rating-distribution', wrap(async (req, res) => {
