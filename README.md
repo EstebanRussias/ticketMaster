@@ -8,6 +8,8 @@ Une **API REST JSON** (Node.js / Express) et un **front web** (EJS) consomment l
 
 🎬 [Vidéo de présentation](docs/video/)
 
+[Présentation de nos choix](docs/schema.md)
+
 ## Prérequis
 
 - Docker Desktop (ou Docker Engine + plugin Compose v2), ports libres : `3000`, `3306`, `27017`.
@@ -69,7 +71,7 @@ ajout voir mettre a jour et supprimer
 ## Sauvegarde
 
 ```bash
-./docker/backup.sh                          # -> backups/<horodatage>/{mysql.sql, mongo.archive.gz}
+./docker/backup.sh       
 ./docker/restore.sh backups/<horodatage>
 ```
 
