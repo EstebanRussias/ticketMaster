@@ -65,8 +65,10 @@ async function trendingEvents(params) {
 }
 
 async function deleteEventEverywhere(eventId) {
-    if (!(await sql.softDeleteEvent(eventId))) throw new HttpError(404, 'Evenement introuvable');
-    return content.deleteContent(eventId);
+    // Le contenu MongoDB est supprime meme si l'evenement SQL l'etait deja (document orphelin)
+    const [sqlDeleted, mongo] = await Promise.all([sql.softDeleteEvent(eventId), content.deleteContent(eventId)]);
+    if (!sqlDeleted && !mongo.content) throw new HttpError(404, 'Evenement introuvable');
+    return mongo;
 }
 
 module.exports = { listEventsWithRatings, getFullEvent, getReviewsWithAuthors, getUserReviewsWithEvents, postReview, topEvents, trendingEvents, deleteEventEverywhere };

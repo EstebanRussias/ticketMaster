@@ -18,7 +18,7 @@
     <label>Acces (separes par des virgules) <input type="text" name="access" value="<%= (vi.access || []).join(', ') %>"></label>
     <div class="actions">
         <button type="submit"><%= doc ? 'Enregistrer' : 'Creer le document' %></button>
-        <% if (doc) { %><button type="button" class="danger" id="content-delete">Supprimer le document (et ses avis)</button><% } %>
+        <button type="button" class="danger" id="event-delete">Supprimer l'evenement</button>
     </div>
     <p id="msg" class="error"></p>
 </form>
@@ -35,8 +35,8 @@
     const list = (s) => s.split(',').map((x) => x.trim()).filter(Boolean);
     const msg = document.getElementById('msg');
 
-    async function send(method, body) {
-        const res = await fetch(url, {
+    async function send(method, body, target = url) {
+        const res = await fetch(target, {
             method,
             headers: { 'Content-Type': 'application/json' },
             body: body && JSON.stringify(body),
@@ -67,8 +67,10 @@
         if (await send(exists ? 'PUT' : 'POST', body)) location.reload();
     });
 
-    document.getElementById('content-delete')?.addEventListener('click', async () => {
-        if (confirm('Supprimer ce document et tous les avis associes ?') && await send('DELETE')) {
+    // Suppression complete : soft delete MySQL + document event_content et avis MongoDB
+    document.getElementById('event-delete').addEventListener('click', async () => {
+        if (confirm("Supprimer l'evenement <%= event.eventId %> dans MySQL et MongoDB ?")
+            && await send('DELETE', undefined, '/api/events/<%= event.eventId %>')) {
             location.href = '/admin/content';
         }
     });

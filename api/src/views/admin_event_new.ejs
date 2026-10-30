@@ -1,0 +1,110 @@
+<%- include('partials/header') %>
+
+<a href="/admin/content">&larr; Contenus</a>
+<h1>Creer un evenement</h1>
+<p class="muted">L'evenement et ses categories sont crees dans MySQL, puis son contenu dans MongoDB (<code>_id</code> = id MySQL).</p>
+
+<form id="event-form" class="form wide">
+    <h2>Evenement (MySQL)</h2>
+    <label>Artiste <input type="text" name="artist" maxlength="150" required></label>
+    <label>Salle
+        <select name="idLocation" required>
+            <option value="">-- Choisir une salle --</option>
+            <% locations.forEach(l => { %>
+                <option value="<%= l.id %>"><%= l.name %> (<%= l.city %>, <%= l.nbQuantity %> places)</option>
+            <% }) %>
+        </select>
+    </label>
+    <label>Date et heure <input type="datetime-local" name="eventDate" required></label>
+
+    <h3>Categories de places</h3>
+    <div id="categories"></div>
+    <div class="actions"><button type="button" class="small" id="add-category">+ Ajouter une categorie</button></div>
+
+    <h2>Contenu (MongoDB)</h2>
+    <label>Genre <input type="text" name="genre" maxlength="50" required></label>
+    <label>Description <textarea name="description" rows="5" minlength="10" maxlength="4000" required></textarea></label>
+    <label>Tags (separes par des virgules) <input type="text" name="tags"></label>
+    <label>Programme (une ligne par passage : HH:MM Nom)
+        <textarea name="lineup" rows="4"></textarea>
+    </label>
+    <label>Ouverture des portes (HH:MM) <input type="text" name="doorsOpen" maxlength="5"></label>
+    <label>Age minimum <input type="number" name="ageLimit" min="0" max="99"></label>
+    <label>Acces (separes par des virgules) <input type="text" name="access"></label>
+
+    <div class="actions">
+        <button type="submit">Creer l'evenement</button>
+    </div>
+    <p id="msg" class="error"></p>
+</form>
+
+<script>
+    // Creation via POST /api/events (event + categories en transaction MySQL, puis contenu MongoDB)
+    const list = (s) => s.split(',').map((x) => x.trim()).filter(Boolean);
+    const msg = document.getElementById('msg');
+    const categories = document.getElementById('categories');
+
+    function addCategory() {
+        const row = document.createElement('div');
+        row.className = 'category-row';
+        row.innerHTML = `
+            <input type="text" name="catName" maxlength="100" placeholder="Nom (Fosse, Balcon...)" required>
+            <input type="number" name="catPrice" min="0" step="0.01" placeholder="Prix" required>
+            <input type="number" name="catQty" min="1" step="1" placeholder="Quantite" required>
+            <button type="button" class="small danger">Retirer</button>`;
+        row.querySelector('button').addEventListener('click', () => {
+            if (categories.children.length > 1) row.remove();
+        });
+        categories.appendChild(row);
+    }
+    document.getElementById('add-category').addEventListener('click', () => {
+        if (categories.children.length < 10) addCategory();
+    });
+    addCategory();
+
+    document.getElementById('event-form').addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        msg.textContent = '';
+        const f = ev.target;
+        const lineup = f.lineup.value.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
+            const [startTime, ...name] = l.split(/\s+/);
+            return { startTime, name: name.join(' ') };
+        });
+        const venueInfo = { access: list(f.access.value) };
+        if (f.doorsOpen.value) venueInfo.doorsOpen = f.doorsOpen.value;
+        if (f.ageLimit.value !== '') venueInfo.ageLimit = Number(f.ageLimit.value);
+        const body = {
+            artist: f.artist.value,
+            idLocation: Number(f.idLocation.value),
+            eventDate: new Date(f.eventDate.value).toISOString(),
+            categories: [...categories.children].map((row) => ({
+                name: row.querySelector('[name=catName]').value,
+                price: Number(row.querySelector('[name=catPrice]').value),
+                nbQuantity: Number(row.querySelector('[name=catQty]').value),
+            })),
+            content: {
+                artist: f.artist.value,
+                genre: f.genre.value,
+                description: f.description.value,
+                tags: list(f.tags.value),
+                lineup,
+                venueInfo,
+            },
+        };
+        const button = f.querySelector('button[type=submit]');
+        button.disabled = true;
+        const res = await fetch('/api/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (res.ok) {
+            location.href = '/admin/content/' + (await res.json()).eventId;
+            return;
+        }
+        msg.textContent = (await res.json().catch(() => ({}))).error || 'Erreur';
+        button.disabled = false;
+    });
+</script>
+
+<%- include('partials/footer') %>

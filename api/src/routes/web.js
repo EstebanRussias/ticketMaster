@@ -66,6 +66,11 @@ router.get('/admin/content', requireAdmin, wrap(async (req, res) => {
     res.render('admin_content', { result, genre, genres: genres.map((g) => g.genre).sort() });
 }));
 
+// Declaree avant /admin/content/:id, sinon "new" serait pris pour un id
+router.get('/admin/content/new', requireAdmin, wrap(async (req, res) => {
+    res.render('admin_event_new', { locations: await sql.listLocations() });
+}));
+
 router.get('/admin/content/:id', requireAdmin, wrap(async (req, res) => {
     const id = parseId(req.params.id);
     const [event, doc] = await Promise.all([sql.getEvent(id), content.getContent(id)]);

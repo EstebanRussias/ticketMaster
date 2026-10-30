@@ -96,14 +96,23 @@ const parseCategories = (list) => {
 };
 
 router.post('/events', requireAdmin, wrap(async (req, res) => {
-    const id = await sql.createEvent({
-        artist: v.str(req.body.artist, 'artist', { max: 150 }),
+    const artist = v.str(req.body.artist, 'artist', { max: 150 });
+    const event = {
+        artist,
         idLocation: v.int(req.body.idLocation, 'idLocation'),
         eventDate: v.date(req.body.eventDate, 'eventDate'),
         categories: parseCategories(req.body.categories),
-    });
-    if (req.body.content) {
-        await content.upsertContent(id, parseContent(req.body.content, req.body.artist));
+    };
+    // Contenu valide avant toute ecriture : pas d'evenement MySQL orphelin si le contenu est invalide
+    const doc = req.body.content ? parseContent(req.body.content, artist, { create: true }) : null;
+    const id = await sql.createEvent(event);
+    if (doc) {
+        try {
+            await content.createContent(id, doc);
+        } catch (err) {
+            await sql.softDeleteEvent(id);
+            throw err;
+        }
     }
     res.status(201).json(await sql.getEvent(id));
 }));

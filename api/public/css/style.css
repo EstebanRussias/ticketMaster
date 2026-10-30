@@ -34,3 +34,6 @@ textarea { padding: 0.5rem; font-size: 1rem; font-family: inherit; }
 .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 button.danger { background: #b00020; }
 button.small { padding: 0.2rem 0.6rem; font-size: 0.85rem; }
+a.button { display: inline-block; background: #1a1a2e; color: #fff; border-radius: 4px; padding: 0.5rem 1rem; text-decoration: none; }
+.category-row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.category-row input { flex: 1; min-width: 100px; }
